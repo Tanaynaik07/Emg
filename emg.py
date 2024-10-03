@@ -44,7 +44,7 @@ ax.set_xlabel('Time')
 ax.set_ylabel('EMG (µV)')
 ax.set_title('Dynamic EMG Data Plot (Arm Fist Movement)')
 
-# Update function for animation
+# Modify the update function to check for test duration
 def update(frame):
     global index, max_emg_value, all_emg_data, threshold_line_data, phase, start_time, running  # Declare global
 
@@ -78,9 +78,15 @@ def update(frame):
         phase = "noise_removal"
         messagebox.showinfo("Phase Transition", "Noise detected. Removing noise...")
         transition_to_test_ui()  # Transition to the test UI after noise detection
+    
+    # Check for test duration
+    if phase == "test_running" and time.time() - start_time > test_duration_seconds:
+        running = False  # Stop the test
+        phase = "test_ui"  # Transition back to the test UI phase
+        messagebox.showinfo("Test Completed", "Test duration reached. Stopping test.")
+        btn_start.config(text="Start")  # Reset button text
 
     return line, threshold_line_plot
-
 # Function to toggle the animation (start/stop)
 def toggle_animation():
     global running, phase, start_time, total_usage_start
@@ -167,19 +173,21 @@ def transition_to_test_ui():
     btn_start.config(command=start_test)  # Change button action to start the test
     lbl_info.config(text="Noise removal complete. Please start the test.")
 
-# Function to start the test (endurance or fatigue)
+# Add this to your global variables section
+test_duration_seconds = 0  # Duration for the test in seconds
+
+# Update the start_test function
 def start_test():
-    global phase, test_type, test_duration, start_time, running
+    global phase, test_type, test_duration, start_time, running, test_duration_seconds
     if phase != "test_ui":
         messagebox.showwarning("Warning", "You cannot start the test yet.")
         return
     
     test_type = test_var.get()
-    test_duration = int(entry_duration.get())  # Get test duration
+    test_duration_seconds = int(entry_duration.get())  # Get test duration
     phase = "test_running"
     running = True
     start_time = time.time()  # Start the test timer
-
 # Function to update and display timers
 def update_timers():
     if total_usage_start:
